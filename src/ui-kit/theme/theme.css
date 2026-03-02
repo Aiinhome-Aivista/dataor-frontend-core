@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Theme 1: Modern Dark (Default) */
+  --color-bg-default: #0a0a0a;
+  --color-surface-default: #171717;
+  --color-surface-hover-default: #262626;
+  --color-border-default: #262626;
+  --color-text-primary-default: #ffffff;
+  --color-text-secondary-default: #a3a3a3;
+  --color-accent-default: #3b82f6;
+  --color-accent-hover-default: #2563eb;
+
+  /* Theme 2: Warm Organic (Alternative) */
+  --color-bg-warm: #f5f5f0;
+  --color-surface-warm: #ffffff;
+  --color-surface-hover-warm: #fafaf9;
+  --color-border-warm: #e5e5e0;
+  --color-text-primary-warm: #1c1917;
+  --color-text-secondary-warm: #57534e;
+  --color-accent-warm: #5a5a40;
+  --color-accent-hover-warm: #4a4a35;
+}
+
+@layer base {
+  :root, .theme-default {
+    --bg: var(--color-bg-default);
+    --surface: var(--color-surface-default);
+    --surface-hover: var(--color-surface-hover-default);
+    --border: var(--color-border-default);
+    --text-primary: var(--color-text-primary-default);
+    --text-secondary: var(--color-text-secondary-default);
+    --accent: var(--color-accent-default);
+    --accent-hover: var(--color-accent-hover-default);
+  }
+
+  .theme-warm {
+    --bg: var(--color-bg-warm);
+    --surface: var(--color-surface-warm);
+    --surface-hover: var(--color-surface-hover-warm);
+    --border: var(--color-border-warm);
+    --text-primary: var(--color-text-primary-warm);
+    --text-secondary: var(--color-text-secondary-warm);
+    --accent: var(--color-accent-warm);
+    --accent-hover: var(--color-accent-hover-warm);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
