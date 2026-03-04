@@ -32,7 +32,7 @@ class AgentService {
     },
     {
       id: 'ingest',
-      name: 'Ingestion Agent',
+      name: 'Collection Agent',
       icon: 'server',
       description: 'Fetching and storing remote data',
       history: [

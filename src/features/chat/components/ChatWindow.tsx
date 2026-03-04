@@ -11,13 +11,12 @@ import { Connector } from '../../connectors/types';
 
 interface ChatWindowProps {
   initialMode?: ChatMode;
+  onNewConnector?: () => void;
 }
 
-export const ChatWindow = ({ initialMode = 'landing' }: ChatWindowProps) => {
-  const { messages, sendMessage, isLoading, scrollRef, mode, completeWorkflow, startChat, startWorkflow } = useChat(initialMode);
+export const ChatWindow = ({ initialMode = 'landing', onNewConnector }: ChatWindowProps) => {
+  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat, startWorkflow } = useChat(initialMode);
   const [connectors, setConnectors] = useState<Connector[]>([]);
-  const [collections, setCollections] = useState<Record<string, string[]>>({});
-  const [expandedConnector, setExpandedConnector] = useState<string | null>(null);
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(true);
 
   useEffect(() => {
@@ -28,23 +27,6 @@ export const ChatWindow = ({ initialMode = 'landing' }: ChatWindowProps) => {
           const data = await connectorService.getConnectors();
           const connected = data.filter(c => c.status === 'connected');
           setConnectors(connected);
-          
-          // Fetch collections for all connected connectors
-          const collectionsData: Record<string, string[]> = {};
-          for (const conn of connected) {
-            try {
-              const colls = await connectorService.getCollections(conn.id);
-              collectionsData[conn.id] = colls;
-            } catch (e) {
-              console.error(`Failed to fetch collections for ${conn.id}`, e);
-            }
-          }
-          setCollections(collectionsData);
-          
-          // Expand the first one by default
-          if (connected.length > 0) {
-            setExpandedConnector(connected[0].id);
-          }
         } catch (err) {
           console.error(err);
         } finally {
@@ -54,10 +36,6 @@ export const ChatWindow = ({ initialMode = 'landing' }: ChatWindowProps) => {
       fetchConnectors();
     }
   }, [mode]);
-
-  const toggleConnector = (id: string) => {
-    setExpandedConnector(prev => prev === id ? null : id);
-  };
 
   return (
     <Card className="flex flex-col h-[700px] shadow-2xl shadow-black/20 border-[var(--border)] overflow-hidden">
@@ -119,14 +97,10 @@ export const ChatWindow = ({ initialMode = 'landing' }: ChatWindowProps) => {
                       <Button
                         variant="ghost"
                         className="w-full justify-between h-auto py-4 px-6 rounded-none hover:bg-[var(--surface-hover)] transition-all"
-                        onClick={() => toggleConnector(conn.id)}
+                        onClick={startChat}
                       >
                         <div className="flex items-center gap-3">
-                          {expandedConnector === conn.id ? (
-                            <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-[var(--text-secondary)]" />
-                          )}
+                          <Database className="w-5 h-5 text-[var(--accent)]" />
                           <div className="flex flex-col items-start">
                             <span className="font-bold text-[var(--text-primary)]">{conn.name}</span>
                             <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-tighter">{conn.type}</span>
@@ -135,62 +109,23 @@ export const ChatWindow = ({ initialMode = 'landing' }: ChatWindowProps) => {
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span className="text-[10px] font-bold text-emerald-500 uppercase">Online</span>
+                            <span className="text-[10px] font-bold text-emerald-500 uppercase">Ready</span>
                           </div>
+                          <ArrowRight className="w-4 h-4 text-[var(--text-secondary)]" />
                         </div>
                       </Button>
-                      
-                      <AnimatePresence>
-                        {expandedConnector === conn.id && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="border-t border-[var(--border)] bg-[var(--bg)]/50"
-                          >
-                            <div className="p-4 space-y-2">
-                              <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-3 px-2">Collections / Tables</div>
-                              {collections[conn.id] ? (
-                                collections[conn.id].map(collection => (
-                                  <Button
-                                    key={collection}
-                                    variant="ghost"
-                                    className="w-full justify-between h-10 px-4 text-sm hover:bg-[var(--accent)]/5 hover:text-[var(--accent)] group"
-                                    onClick={startWorkflow}
-                                  >
-                                    <span className="font-medium text-[var(--text-secondary)] group-hover:text-[var(--accent)]">{collection}</span>
-                                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--accent)]" />
-                                  </Button>
-                                ))
-                              ) : (
-                                <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">Loading collections...</div>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </div>
                   ))
                 )}
                 
                 <Button 
                   className="w-full h-auto py-4 rounded-xl mt-6 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white font-bold shadow-lg shadow-[var(--accent)]/20"
-                  onClick={startWorkflow}
+                  onClick={onNewConnector}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Connect New Data Source
                 </Button>
               </div>
-            </motion.div>
-          ) : mode === 'workflow' ? (
-            <motion.div
-              key="workflow"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="h-full"
-            >
-              <AgentWorkflow onComplete={completeWorkflow} compact />
             </motion.div>
           ) : (
             <motion.div
@@ -199,12 +134,6 @@ export const ChatWindow = ({ initialMode = 'landing' }: ChatWindowProps) => {
               animate={{ opacity: 1 }}
               className="space-y-4"
             >
-              <div className="flex justify-end mb-4">
-                <Button variant="outline" size="sm" onClick={() => startWorkflow()}>
-                  <Database className="w-4 h-4 mr-2" />
-                  Agent Dashboard
-                </Button>
-              </div>
               {messages.map((msg) => (
                 <ChatMessage key={msg.id} message={msg} />
               ))}
@@ -213,13 +142,36 @@ export const ChatWindow = ({ initialMode = 'landing' }: ChatWindowProps) => {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-start mb-4"
+                  className="flex flex-col mb-4"
                 >
-                  <div className="bg-[var(--surface)] border border-[var(--border)] px-4 py-3 rounded-2xl rounded-tl-none flex gap-1.5 items-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/40 animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/40 animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/40 animate-bounce" />
+                  <div className="flex justify-start mb-2">
+                    <div className="bg-[var(--surface)] border border-[var(--border)] px-4 py-3 rounded-2xl rounded-tl-none flex gap-1.5 items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/40 animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/40 animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)]/40 animate-bounce" />
+                    </div>
                   </div>
+                  {processingSteps.length > 0 && (
+                    <div className="pl-4 border-l-2 border-[var(--border)] ml-4 mt-2 space-y-2">
+                      {processingSteps.map((step, idx) => (
+                        <motion.div 
+                          key={idx}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]"
+                        >
+                          {idx === processingSteps.length - 1 ? (
+                            <Loader2 className="w-3 h-3 text-[var(--accent)] animate-spin" />
+                          ) : (
+                            <div className="w-3 h-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            </div>
+                          )}
+                          {step}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               )}
             </motion.div>

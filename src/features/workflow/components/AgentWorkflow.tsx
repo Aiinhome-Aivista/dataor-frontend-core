@@ -8,6 +8,7 @@ import { agentService } from '@/src/services/agent.service';
 interface AgentWorkflowProps {
   onComplete: () => void;
   compact?: boolean;
+  defaultAgentId?: string;
 }
 
 const HistoryItemCard = ({ 
@@ -59,6 +60,13 @@ const HistoryItemCard = ({
   const handleTableSelectionSubmit = () => {
     const actionText = `Existing: ${tableAction === 'update' ? 'Update' : 'Replace'}, New: ${selectedNewTables.length > 0 ? selectedNewTables.join(', ') : 'None'}`;
     onAction(item, actionText);
+  };
+
+  const getContinueText = (currentId: string) => {
+    if (currentId === 'connect') return 'Continue to Collection Agent';
+    if (currentId === 'ingest') return 'Continue to Analysis Agent';
+    if (currentId === 'analyze') return 'Continue to Chat Agent';
+    return 'Open Chat';
   };
 
   return (
@@ -120,7 +128,7 @@ const HistoryItemCard = ({
             onClick={() => onForward(agent.id, item.action)}
             className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
           >
-            {agent.id === 'query' ? 'Open Chat' : 'Continue Flow'} <ArrowRight className="w-4 h-4 ml-2" />
+            {getContinueText(agent.id)} <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
       )}
@@ -222,7 +230,7 @@ const HistoryItemCard = ({
                 onClick={() => onAction(item, 'Continue')}
                 className="ml-auto"
               >
-                {agent.id === 'query' ? 'Open Chat' : 'Continue Flow'} <ArrowRight className="w-4 h-4 ml-2" />
+                {getContinueText(agent.id)} <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           )}
@@ -232,10 +240,14 @@ const HistoryItemCard = ({
   );
 };
 
-export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProps) => {
+export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'connect' }: AgentWorkflowProps) => {
   const [agents, setAgents] = useState<AgentData[]>([]);
-  const [selectedAgentId, setSelectedAgentId] = useState<string>('connect');
+  const [selectedAgentId, setSelectedAgentId] = useState<string>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setSelectedAgentId(defaultAgentId);
+  }, [defaultAgentId]);
 
   useEffect(() => {
     const fetchAgents = async () => {
@@ -374,15 +386,15 @@ export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProp
         'Mapping schema structures...'
       ];
     } else if (selectedAgent.id === 'ingest') {
-      actionName = 'Ingesting Sales Analytics';
-      details = 'Checking for new data...';
-      prompt = 'New 2k data rows found. Do you want to replace the whole data or only get new data?';
-      options = ['Replace Whole Data', 'Get New Data Only', 'Skip'];
+      actionName = 'Refetching Data';
+      details = 'Previous fetch: 50,000 rows. Checking for updates...';
+      prompt = 'Found 2,000 new rows. Do you want to replace the whole data or add the new rows?';
+      options = ['Replace Whole Data', 'Add New Rows', 'Cancel'];
       activities = [
-        'Streaming rows...',
-        'Normalizing data types...',
-        'Indexing primary keys...',
-        'Storing on local cache...'
+        'Connecting to source...',
+        'Comparing row hashes...',
+        'Streaming new rows...',
+        'Updating local cache...'
       ];
     } else if (selectedAgent.id === 'analyze') {
       actionName = 'Analyzing Dataset';
@@ -491,6 +503,50 @@ export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProp
             </CardHeader>
             
             <CardContent className={`flex-1 ${compact ? 'px-0 overflow-visible' : 'overflow-y-auto p-6'} space-y-6`}>
+              {selectedAgent.id === 'ingest' && (
+                <div className="mb-8 p-6 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/50">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+                    Database Details
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
+                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-1">Total Rows</div>
+                      <div className="text-2xl font-bold font-mono">50,000</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
+                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-1">Total Columns</div>
+                      <div className="text-2xl font-bold font-mono">24</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
+                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-1">Data Size</div>
+                      <div className="text-2xl font-bold font-mono">12.4 MB</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
+                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-1">Last Sync</div>
+                      <div className="text-sm font-bold mt-2">Just now</div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-3">Tables</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+                        <span className="font-mono text-sm">public.users</span>
+                        <span className="text-xs text-[var(--text-secondary)]">50,000 rows • 12 cols</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+                        <span className="font-mono text-sm">public.transactions</span>
+                        <span className="text-xs text-[var(--text-secondary)]">124,500 rows • 8 cols</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+                        <span className="font-mono text-sm">public.products</span>
+                        <span className="text-xs text-[var(--text-secondary)]">1,200 rows • 4 cols</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
                 Activity History
               </h3>

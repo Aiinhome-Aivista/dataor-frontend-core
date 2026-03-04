@@ -4,12 +4,12 @@ import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/LandingPage';
 import { LoginPage } from './features/auth/LoginPage';
-import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles } from 'lucide-react';
+import { Moon, Sun, Layout, Settings, LogOut, Menu, MessageSquare, Database, Plus, Sparkles, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { agentService } from './services/agent.service';
 
-type Tab = 'connectors' | 'chat' | 'new-connector' | 'workflow';
+type Tab = 'connectors' | 'chat' | 'new-connector' | 'collection' | 'analysis';
 type ViewMode = 'landing' | 'login' | 'app';
 
 function AppContent() {
@@ -57,7 +57,7 @@ function AppContent() {
       ]
     });
     
-    changeTab('workflow');
+    changeTab('collection');
   };
 
   const handleWorkflowComplete = () => {
@@ -114,9 +114,10 @@ function AppContent() {
 
         <nav className="flex-1 px-4 space-y-2 mt-4">
           {[
-            { icon: MessageSquare, label: 'Chat Assistant', id: 'chat' as Tab },
-            { icon: Database, label: 'Data Connectors', id: 'connectors' as Tab },
-            { icon: Sparkles, label: 'Agent Orchestration', id: 'workflow' as Tab },
+            { icon: MessageSquare, label: 'Chat Agent', id: 'chat' as Tab },
+            { icon: Database, label: 'Connection Agent', id: 'connectors' as Tab },
+            { icon: Sparkles, label: 'Collection Agent', id: 'collection' as Tab },
+            { icon: BarChart3, label: 'Analysis Agent', id: 'analysis' as Tab },
             { icon: Settings, label: 'Settings', id: 'settings' },
           ].map((item) => (
             <button
@@ -128,7 +129,7 @@ function AppContent() {
               }}
               className={`
                 w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200
-                ${(activeTab === item.id || (activeTab === 'new-connector' && item.id === 'connectors') || (activeTab === 'workflow' && item.id === 'chat'))
+                ${(activeTab === item.id || (activeTab === 'new-connector' && item.id === 'connectors'))
                   ? 'bg-[var(--accent)]/10 text-[var(--accent)]' 
                   : 'hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
               `}
@@ -168,21 +169,24 @@ function AppContent() {
             <h1 className="text-2xl font-bold tracking-tight">
               {activeTab === 'chat' ? 'AI Assistant' : 
                activeTab === 'new-connector' ? 'Add Connector' : 
-               activeTab === 'workflow' ? 'Agent Orchestration' : 'Connectors & MCPs'}
+               activeTab === 'collection' ? 'Collection Agent' :
+               activeTab === 'analysis' ? 'Analysis Agent' : 'Connectors & MCPs'}
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
               {activeTab === 'chat' 
                 ? 'Chat with Dataor to analyze your data and get insights' 
                 : activeTab === 'new-connector'
                 ? `Set up connection for ${selectedConnector?.name || 'new server'} with Dataor Guide`
-                : activeTab === 'workflow'
-                ? 'Watch your AI agents collaborate to prepare your data'
+                : activeTab === 'collection'
+                ? 'Manage data ingestion and synchronization'
+                : activeTab === 'analysis'
+                ? 'Review statistical models and generated insights'
                 : 'Connect your data directly to run instant analysis'}
             </p>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm">Docs</Button>
-            {activeTab !== 'new-connector' && activeTab !== 'workflow' && (
+            {activeTab !== 'new-connector' && activeTab !== 'collection' && activeTab !== 'analysis' && (
               <Button size="sm" onClick={activeTab === 'chat' ? () => {
                 setJustFinishedWorkflow(false);
                 setChatKey(prev => prev + 1);
@@ -221,6 +225,28 @@ function AppContent() {
                   onTestSuccess={handleStartWorkflow}
                 />
               </motion.div>
+            ) : activeTab === 'collection' ? (
+              <motion.div
+                key="collection"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="h-[calc(100vh-12rem)]"
+              >
+                <AgentWorkflow onComplete={handleWorkflowComplete} defaultAgentId="ingest" />
+              </motion.div>
+            ) : activeTab === 'analysis' ? (
+              <motion.div
+                key="analysis"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="h-[calc(100vh-12rem)]"
+              >
+                <AgentWorkflow onComplete={handleWorkflowComplete} defaultAgentId="analyze" />
+              </motion.div>
             ) : activeTab === 'workflow' ? (
               <motion.div
                 key="workflow"
@@ -243,7 +269,7 @@ function AppContent() {
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h2 className="text-xl font-semibold mb-2">Data Connectors</h2>
+                      <h2 className="text-xl font-semibold mb-2">Connection Agent</h2>
                       <p className="text-sm text-[var(--text-secondary)]">Choose from our list of supported data sources</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={handleNewConnector}>
