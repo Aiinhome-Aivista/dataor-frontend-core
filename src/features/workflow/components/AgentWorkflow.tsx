@@ -47,6 +47,20 @@ const HistoryItemCard = ({
     ? (item.activities?.length || 1) - 1 
     : activityIndex;
 
+  const [tableAction, setTableAction] = useState('update');
+  const [selectedNewTables, setSelectedNewTables] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (item.customInputType === 'table_selection' && item.customInputData?.newTables) {
+      setSelectedNewTables(item.customInputData.newTables);
+    }
+  }, [item]);
+
+  const handleTableSelectionSubmit = () => {
+    const actionText = `Existing: ${tableAction === 'update' ? 'Update' : 'Replace'}, New: ${selectedNewTables.length > 0 ? selectedNewTables.join(', ') : 'None'}`;
+    onAction(item, actionText);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -119,31 +133,99 @@ const HistoryItemCard = ({
               {item.prompt}
             </p>
           )}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            {item.options && (
-              <div className="flex flex-wrap gap-2">
-                {item.options.map(opt => (
-                  <Button 
-                    key={opt} 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => onAction(item, opt)}
-                    className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                  >
-                    {opt}
-                  </Button>
-                ))}
+          
+          {item.customInputType === 'table_selection' ? (
+            <div className="space-y-6 mb-6 bg-white p-4 rounded-xl border border-[var(--border)]">
+              <div>
+                <h5 className="text-sm font-semibold mb-3">Existing Tables Action</h5>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name={`tableAction-${item.id}`} 
+                      value="update" 
+                      checked={tableAction === 'update'} 
+                      onChange={(e) => setTableAction(e.target.value)}
+                      className="text-[var(--accent)] focus:ring-[var(--accent)]"
+                    />
+                    Update Existing
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name={`tableAction-${item.id}`} 
+                      value="replace" 
+                      checked={tableAction === 'replace'} 
+                      onChange={(e) => setTableAction(e.target.value)}
+                      className="text-[var(--accent)] focus:ring-[var(--accent)]"
+                    />
+                    Replace All
+                  </label>
+                </div>
               </div>
-            )}
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={() => onAction(item, 'Continue')}
-              className="ml-auto"
-            >
-              {agent.id === 'query' ? 'Open Chat' : 'Continue Flow'} <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
+              
+              {item.customInputData?.newTables && item.customInputData.newTables.length > 0 && (
+                <div>
+                  <h5 className="text-sm font-semibold mb-3">New Tables Detected</h5>
+                  <div className="space-y-2">
+                    {item.customInputData.newTables.map((table: string) => (
+                      <label key={table} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedNewTables.includes(table)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedNewTables([...selectedNewTables, table]);
+                            } else {
+                              setSelectedNewTables(selectedNewTables.filter(t => t !== table));
+                            }
+                          }}
+                          className="rounded text-[var(--accent)] focus:ring-[var(--accent)]"
+                        />
+                        {table}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end pt-2">
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={handleTableSelectionSubmit}
+                >
+                  Confirm & Continue <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              {item.options && (
+                <div className="flex flex-wrap gap-2">
+                  {item.options.map(opt => (
+                    <Button 
+                      key={opt} 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => onAction(item, opt)}
+                      className="hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                    >
+                      {opt}
+                    </Button>
+                  ))}
+                </div>
+              )}
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => onAction(item, 'Continue')}
+                className="ml-auto"
+              >
+                {agent.id === 'query' ? 'Open Chat' : 'Continue Flow'} <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </motion.div>
@@ -190,12 +272,16 @@ export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProp
       let nextPrompt = 'How would you like to proceed?';
       let nextOptions = ['Continue', 'Skip'];
       let nextActivities = ['Analyzing incoming payload...', 'Preparing environment...'];
+      let nextCustomInputType: 'table_selection' | undefined = undefined;
+      let nextCustomInputData: any = undefined;
 
       if (currentAgentId === 'connect') {
         nextAction = 'Data Ingestion Required';
         nextDetails = `New schema/tables mapped from Connection Agent (${contextData}).`;
-        nextPrompt = `Data is ready to be ingested. Select sync frequency:`;
-        nextOptions = ['Real-time', 'Hourly', 'Daily', 'Manual'];
+        nextPrompt = `Data is ready to be ingested. 2 new tables found. Please configure how to handle the tables.`;
+        nextOptions = [];
+        nextCustomInputType = 'table_selection';
+        nextCustomInputData = { newTables: ['user_activity_logs', 'payment_transactions'] };
         nextActivities = ['Receiving schema definition...', 'Allocating storage...', 'Preparing ingestion pipeline...'];
       } else if (currentAgentId === 'ingest') {
         nextAction = 'Analysis Pending';
@@ -226,7 +312,9 @@ export const AgentWorkflow = ({ onComplete, compact = false }: AgentWorkflowProp
         await agentService.updateHistoryItem(nextAgentId, newItem.id, {
           status: 'pending_input',
           prompt: nextPrompt,
-          options: nextOptions
+          options: nextOptions,
+          customInputType: nextCustomInputType,
+          customInputData: nextCustomInputData
         });
         setAgents(await agentService.getAgents());
       }, processingTime);

@@ -1,4 +1,4 @@
-import { useChat } from '../hooks/useChat';
+import { useChat, ChatMode } from '../hooks/useChat';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { Card, CardContent, CardHeader, CardFooter, Badge, Button } from '@/src/ui-kit';
@@ -9,8 +9,12 @@ import { useState, useEffect } from 'react';
 import { connectorService } from '@/src/services/connector.service';
 import { Connector } from '../../connectors/types';
 
-export const ChatWindow = () => {
-  const { messages, sendMessage, isLoading, scrollRef, mode, completeWorkflow, startChat, startWorkflow } = useChat();
+interface ChatWindowProps {
+  initialMode?: ChatMode;
+}
+
+export const ChatWindow = ({ initialMode = 'landing' }: ChatWindowProps) => {
+  const { messages, sendMessage, isLoading, scrollRef, mode, completeWorkflow, startChat, startWorkflow } = useChat(initialMode);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [collections, setCollections] = useState<Record<string, string[]>>({});
   const [expandedConnector, setExpandedConnector] = useState<string | null>(null);

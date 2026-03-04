@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Server, Shield, Globe, Info, ChevronLeft, Sparkles, Loader2 } from 'lucide-react';
 import { ThreeAvatar } from '../../chat/components/ThreeAvatar';
 import { Connector } from '../types';
+import { connectorService } from '@/src/services/connector.service';
 
 interface FieldGuide {
   title: string;
@@ -65,10 +66,16 @@ export const ConnectorForm = ({ onBack, connector, onTestSuccess }: ConnectorFor
   const handleFocus = (field: string) => setActiveField(field);
   const handleMouseEnter = (field: string) => setActiveField(field);
 
-  const handleTestConnection = () => {
+  const handleTestConnection = async () => {
     setIsTesting(true);
     // Simulate successful test
-    setTimeout(() => {
+    setTimeout(async () => {
+      await connectorService.addConnector({
+        name: formData.name || 'New Connection',
+        description: `Connected to ${formData.host || 'database'}`,
+        type: 'Database',
+        icon: 'database'
+      });
       setIsTesting(false);
       onTestSuccess?.(formData.name);
     }, 1500);

@@ -18,6 +18,8 @@ function AppContent() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);
+  const [justFinishedWorkflow, setJustFinishedWorkflow] = useState(false);
+  const [chatKey, setChatKey] = useState(0);
 
   const handleLogin = () => setViewMode('login');
   const handleGetStarted = () => setViewMode('login');
@@ -27,17 +29,17 @@ function AppContent() {
 
   const handleNewConnector = () => {
     setSelectedConnector(null);
-    setActiveTab('new-connector');
+    changeTab('new-connector');
   };
 
   const handleSelectConnector = (connector: Connector) => {
     setSelectedConnector(connector);
-    setActiveTab('new-connector');
+    changeTab('new-connector');
   };
 
   const handleBackToConnectors = () => {
     setSelectedConnector(null);
-    setActiveTab('connectors');
+    changeTab('connectors');
   };
 
   const handleStartWorkflow = async (connectionName?: string) => {
@@ -55,14 +57,22 @@ function AppContent() {
       ]
     });
     
-    setActiveTab('workflow');
+    changeTab('workflow');
   };
 
   const handleWorkflowComplete = () => {
     // Wait a bit then switch to chat
     setTimeout(() => {
+      setJustFinishedWorkflow(true);
       setActiveTab('chat');
     }, 1500);
+  };
+
+  const changeTab = (tab: Tab) => {
+    if (tab !== 'chat') {
+      setJustFinishedWorkflow(false);
+    }
+    setActiveTab(tab);
   };
 
   if (viewMode === 'landing') {
@@ -113,7 +123,7 @@ function AppContent() {
               key={item.label}
               onClick={() => {
                 if (typeof item.id === 'string' && item.id !== 'settings') {
-                  setActiveTab(item.id as Tab);
+                  changeTab(item.id as Tab);
                 }
               }}
               className={`
@@ -173,7 +183,10 @@ function AppContent() {
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm">Docs</Button>
             {activeTab !== 'new-connector' && activeTab !== 'workflow' && (
-              <Button size="sm" onClick={activeTab === 'chat' ? () => {} : handleNewConnector}>
+              <Button size="sm" onClick={activeTab === 'chat' ? () => {
+                setJustFinishedWorkflow(false);
+                setChatKey(prev => prev + 1);
+              } : handleNewConnector}>
                 <Plus className="w-4 h-4 mr-2" />
                 {activeTab === 'chat' ? 'New Chat' : 'New Connector'}
               </Button>
@@ -185,14 +198,14 @@ function AppContent() {
           <AnimatePresence mode="wait">
             {activeTab === 'chat' ? (
               <motion.div
-                key="chat"
+                key={`chat-${chatKey}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
                 className="max-w-4xl mx-auto"
               >
-                <ChatWindow />
+                <ChatWindow initialMode={justFinishedWorkflow ? 'chat' : 'landing'} />
               </motion.div>
             ) : activeTab === 'new-connector' ? (
               <motion.div
@@ -227,26 +240,10 @@ function AppContent() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="mb-12">
-                  <h2 className="text-xl font-semibold mb-6">Integrations</h2>
-                  <div className="p-6 rounded-2xl bg-[var(--accent)]/5 border border-[var(--accent)]/10 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-lg">
-                        <img src="https://picsum.photos/seed/slack/64/64" alt="Slack" className="w-8 h-8 rounded" referrerPolicy="no-referrer" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold">Slack</h3>
-                        <p className="text-sm text-[var(--text-secondary)]">Connect your Slack workspace to receive reports and insights</p>
-                      </div>
-                    </div>
-                    <Button variant="primary" size="sm">Connect</Button>
-                  </div>
-                </div>
-
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h2 className="text-xl font-semibold mb-2">Add Connectors</h2>
+                      <h2 className="text-xl font-semibold mb-2">Data Connectors</h2>
                       <p className="text-sm text-[var(--text-secondary)]">Choose from our list of supported data sources</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={handleNewConnector}>

@@ -25,6 +25,8 @@ export interface AgentHistoryItem {
   prompt?: string;
   options?: string[];
   activities?: string[];
+  customInputType?: 'table_selection';
+  customInputData?: any;
 }
 
 export interface AgentData {
