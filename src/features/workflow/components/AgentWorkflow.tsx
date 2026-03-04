@@ -5,10 +5,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Database, Server, BarChart3, MessageSquare, Sparkles, CheckCircle2, Loader2, Clock, Play, RotateCcw, ArrowRight } from 'lucide-react';
 import { agentService } from '@/src/services/agent.service';
 
+import { ConnectorList } from '../../connectors/components/ConnectorList';
+import { Connector } from '../../connectors/types';
+
 interface AgentWorkflowProps {
   onComplete: () => void;
   compact?: boolean;
   defaultAgentId?: string;
+  onChangeTab?: (tabId: string) => void;
+  onNewConnector?: () => void;
+  onSelectConnector?: (connector: Connector) => void;
 }
 
 const HistoryItemCard = ({ 
@@ -240,7 +246,7 @@ const HistoryItemCard = ({
   );
 };
 
-export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'connect' }: AgentWorkflowProps) => {
+export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'connect', onChangeTab, onNewConnector, onSelectConnector }: AgentWorkflowProps) => {
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>(defaultAgentId);
   const [isLoading, setIsLoading] = useState(true);
@@ -448,35 +454,53 @@ export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'c
     );
   }
 
+  const handleStepperClick = (agentId: string) => {
+    setSelectedAgentId(agentId);
+    if (onChangeTab) {
+      const tabMap: Record<string, string> = {
+        connect: 'connectors',
+        ingest: 'collection',
+        analyze: 'analysis',
+        query: 'chat'
+      };
+      if (tabMap[agentId]) {
+        onChangeTab(tabMap[agentId]);
+      }
+    }
+  };
+
   return (
-    <div className={`${compact ? 'max-w-full flex-col' : 'max-w-6xl mx-auto flex-col md:flex-row h-full'} py-4 flex gap-6`}>
-      {/* Sidebar - Agent List */}
-      <div className={`flex ${compact ? 'flex-row overflow-x-auto pb-2 border-b border-[var(--border)]' : 'flex-col md:w-64'} gap-2 shrink-0`}>
-        {agents.map(agent => (
-          <button
-            key={agent.id}
-            onClick={() => setSelectedAgentId(agent.id)}
-            className={`
-              flex items-center gap-3 p-3 rounded-xl transition-all text-left whitespace-nowrap
-              ${selectedAgentId === agent.id 
-                ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20' 
-                : 'bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]'}
-              ${compact ? 'flex-1 justify-center min-w-[140px]' : ''}
-            `}
-          >
-            <div className={`
-              w-8 h-8 rounded-lg flex items-center justify-center shrink-0
-              ${selectedAgentId === agent.id ? 'bg-white/20' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}
-            `}>
-              {getIcon(agent.icon)}
-            </div>
-            <div className={`flex-1 min-w-0 ${compact ? 'block' : 'hidden md:block'}`}>
-              <div className="font-bold text-sm truncate">{agent.name}</div>
-              <div className={`text-[10px] truncate ${selectedAgentId === agent.id ? 'text-white/80' : 'text-[var(--text-secondary)]'}`}>
-                {agent.history.length} activities
+    <div className="max-w-6xl mx-auto flex-col h-full py-4 flex gap-6">
+      {/* Stepper - Agent List */}
+      <div className="flex flex-row overflow-x-auto pb-2 border-b border-[var(--border)] gap-2 shrink-0">
+        {agents.map((agent, index) => (
+          <div key={agent.id} className="flex items-center">
+            <button
+              onClick={() => handleStepperClick(agent.id)}
+              className={`
+                flex items-center gap-3 p-3 rounded-xl transition-all text-left whitespace-nowrap min-w-[160px]
+                ${selectedAgentId === agent.id 
+                  ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20' 
+                  : 'bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]'}
+              `}
+            >
+              <div className={`
+                w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+                ${selectedAgentId === agent.id ? 'bg-white/20' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}
+              `}>
+                {getIcon(agent.icon)}
               </div>
-            </div>
-          </button>
+              <div className="flex-1 min-w-0 block">
+                <div className="font-bold text-sm truncate">{agent.name}</div>
+                <div className={`text-[10px] truncate ${selectedAgentId === agent.id ? 'text-white/80' : 'text-[var(--text-secondary)]'}`}>
+                  {agent.history.length} activities
+                </div>
+              </div>
+            </button>
+            {index < agents.length - 1 && (
+              <div className="w-8 h-[2px] bg-[var(--border)] mx-2 shrink-0" />
+            )}
+          </div>
         ))}
       </div>
 
@@ -548,7 +572,7 @@ export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'c
               )}
 
               <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
-                Activity History
+                {selectedAgent.name} History
               </h3>
               
               <AnimatePresence mode="popLayout">
@@ -572,6 +596,24 @@ export const AgentWorkflow = ({ onComplete, compact = false, defaultAgentId = 'c
                   ))
                 )}
               </AnimatePresence>
+
+              {selectedAgent.id === 'connect' && (
+                <div className="mt-12 pt-8 border-t border-[var(--border)]">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold">Available Connectors</h3>
+                      <p className="text-sm text-[var(--text-secondary)]">Choose from our list of supported data sources</p>
+                    </div>
+                    {onNewConnector && (
+                      <Button variant="outline" size="sm" onClick={onNewConnector}>
+                        <Play className="w-4 h-4 mr-2" />
+                        Custom Connection
+                      </Button>
+                    )}
+                  </div>
+                  <ConnectorList onSelect={onSelectConnector} />
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

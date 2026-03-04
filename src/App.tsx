@@ -247,40 +247,18 @@ function AppContent() {
               >
                 <AgentWorkflow onComplete={handleWorkflowComplete} defaultAgentId="analyze" />
               </motion.div>
-            ) : activeTab === 'workflow' ? (
+            ) : activeTab === 'connectors' ? (
               <motion.div
-                key="workflow"
+                key="connectors"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
                 className="h-[calc(100vh-12rem)]"
               >
-                <AgentWorkflow onComplete={handleWorkflowComplete} />
+                <AgentWorkflow onComplete={handleWorkflowComplete} defaultAgentId="connect" onChangeTab={changeTab} onNewConnector={handleNewConnector} onSelectConnector={handleSelectConnector} />
               </motion.div>
-            ) : (
-              <motion.section
-                key="connectors"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-8">
-                    <div>
-                      <h2 className="text-xl font-semibold mb-2">Connection Agent</h2>
-                      <p className="text-sm text-[var(--text-secondary)]">Choose from our list of supported data sources</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={handleNewConnector}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Custom Connection
-                    </Button>
-                  </div>
-                  <ConnectorList onSelect={handleSelectConnector} />
-                </div>
-              </motion.section>
-            )}
+            ) : null}
           </AnimatePresence>
         </div>
       </main>

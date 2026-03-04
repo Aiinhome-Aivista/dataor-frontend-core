@@ -15,7 +15,7 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow = ({ initialMode = 'landing', onNewConnector }: ChatWindowProps) => {
-  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat, startWorkflow } = useChat(initialMode);
+  const { messages, sendMessage, isLoading, processingSteps, scrollRef, mode, completeWorkflow, startChat } = useChat(initialMode);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(true);
 
