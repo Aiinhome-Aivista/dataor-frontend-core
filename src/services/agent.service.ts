@@ -4,7 +4,7 @@ class AgentService {
   private agents: AgentData[] = [
     {
       id: 'connect',
-      name: 'Connection Agent',
+      name: 'Connection',
       icon: 'database',
       description: 'Establishing secure link to database',
       history: [
@@ -13,6 +13,7 @@ class AgentService {
           date: '2026-03-03T08:30:00Z',
           action: 'Reconnected to Sales Analytics',
           details: 'MySQL connection established successfully.',
+          connectionName: 'Sales Analytics',
           status: 'completed',
           activities: [
             'Verifying credentials...',
@@ -26,13 +27,14 @@ class AgentService {
           date: '2026-03-02T10:00:00Z',
           action: 'Connected to Production DB',
           details: 'PostgreSQL connection established successfully.',
+          connectionName: 'Production DB',
           status: 'completed'
         }
       ]
     },
     {
       id: 'ingest',
-      name: 'Collection Agent',
+      name: 'Collection',
       icon: 'server',
       description: 'Fetching and storing remote data',
       history: [
@@ -41,6 +43,7 @@ class AgentService {
           date: '2026-03-03T08:35:00Z',
           action: 'Ingesting Sales Analytics',
           details: 'Checking for new data...',
+          connectionName: 'Sales Analytics',
           status: 'completed',
           activities: [
             'Streaming rows...',
@@ -54,13 +57,14 @@ class AgentService {
           date: '2026-03-02T10:05:00Z',
           action: 'Ingested Production DB',
           details: 'Fetched 50,000 rows from public.users.',
+          connectionName: 'Production DB',
           status: 'completed'
         }
       ]
     },
     {
       id: 'analyze',
-      name: 'Analysis Agent',
+      name: 'Analysis',
       icon: 'bar-chart',
       description: 'Generating insights and visuals',
       history: [
@@ -69,13 +73,14 @@ class AgentService {
           date: '2026-03-02T10:10:00Z',
           action: 'Analyzed Production DB',
           details: 'Generated 5 statistical summaries and detected 2 anomalies.',
+          connectionName: 'Production DB',
           status: 'completed'
         }
       ]
     },
     {
       id: 'query',
-      name: 'Query Agent',
+      name: 'Query',
       icon: 'message-square',
       description: 'Ready to answer your questions',
       history: [
@@ -84,6 +89,7 @@ class AgentService {
           date: '2026-03-02T10:15:00Z',
           action: 'Chat Session',
           details: 'Answered 3 questions about user retention.',
+          connectionName: 'Production DB',
           status: 'completed'
         }
       ]
